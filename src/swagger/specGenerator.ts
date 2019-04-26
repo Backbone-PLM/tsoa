@@ -103,8 +103,14 @@ export class SpecGenerator {
     pathMethod.summary = method.summary;
     pathMethod.tags = method.tags;
 
+    const routeName = controllerName.replace('Controller', '');
+
+    const defaultOperationId = this.config.prefixOperationIds
+      ? `${routeName}${pathMethod.operationId}`
+      : pathMethod.operationId;
+
     // Use operationId tag otherwise fallback to generated. Warning: This doesn't check uniqueness.
-    pathMethod.operationId = method.operationId || pathMethod.operationId;
+    pathMethod.operationId = method.operationId || defaultOperationId;
 
     if (method.deprecated) {
       pathMethod.deprecated = method.deprecated;
