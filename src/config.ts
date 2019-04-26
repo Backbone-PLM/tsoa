@@ -102,7 +102,7 @@ export interface SwaggerConfig {
    * Prefixes all operationId methods with controller name
    * Useful for controllers with inheritance
    */
-  prefixMethods?: boolean;
+  prefixOperationIds?: boolean;
 
   yaml?: boolean;
 
