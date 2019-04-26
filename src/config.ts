@@ -106,7 +106,7 @@ export interface SwaggerConfig {
 
   yaml?: boolean;
 
-  x_nullable?: boolean;
+  no_x_nullable?: boolean;
 
   schemes?: Swagger.Protocol[];
 }
