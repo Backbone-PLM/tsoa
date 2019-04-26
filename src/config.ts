@@ -98,6 +98,12 @@ export interface SwaggerConfig {
    */
   tags?: Swagger.Tag[];
 
+  /**
+   * Prefixes all operationId methods with controller name
+   * Useful for controllers with inheritance
+   */
+  prefixMethods?: boolean;
+
   yaml?: boolean;
 
   x_nullable?: boolean;
