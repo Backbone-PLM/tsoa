@@ -58,8 +58,21 @@ export class ControllerGenerator {
       .map((generator) => generator.Generate());
 
     methods.forEach((method) => {
+      const stringValueMap = new Map<string, string>([
+        ['PATH', method.path],
+        ['METHOD', method.method.toUpperCase()],
+      ]);
+
+      if (this.path) {
+        stringValueMap.set('ROUTE', this.path);
+      }
+
       method.customAttributes.push(...this.customMethodAttributes);
-      method.customAttributes = this.resolveCustomAttributes(method.customAttributes, method.path, method.method);
+      method.customAttributes = this.resolveCustomAttributes(method.customAttributes, stringValueMap);
+
+      if (method.description) {
+        method.description = this.interpolateString(method.description, stringValueMap);
+      }
     });
 
     return methods;
@@ -187,12 +200,23 @@ export class ControllerGenerator {
     return genericTypeMap;
   }
 
-  private resolveCustomAttributes(customAttributes: Tsoa.CustomAttribute[], path: string, method: string) {
-    return customAttributes.map((customAttr) => {
-      let attributeValue = JSON.stringify(customAttr.value);
+  private interpolateString(initialString: string, stringValueMap: Map<string, string>) {
+    let resolvedString = initialString;
 
-      attributeValue = attributeValue.replace(/\{\$PATH\}/g, path);
-      attributeValue = attributeValue.replace(/\{\$METHOD\}/g, method.toUpperCase());
+    stringValueMap.forEach((val: string, key: string) => {
+      const regex = new RegExp(`{\\$${key}}`, 'g');
+
+      resolvedString = resolvedString.replace(regex, val);
+    });
+
+    return resolvedString;
+  }
+
+  private resolveCustomAttributes(customAttributes: Tsoa.CustomAttribute[], stringValueMap: Map<string, string>) {
+    return customAttributes.map((customAttr) => {
+      const customAttrString = JSON.stringify(customAttr.value);
+
+      const attributeValue = this.interpolateString(customAttrString, stringValueMap);
 
       return { key: customAttr.key, value: JSON.parse(attributeValue) };
     });
