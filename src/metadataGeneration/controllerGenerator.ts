@@ -43,6 +43,7 @@ export class ControllerGenerator {
       methods: this.buildMethods(),
       name: this.node.name.text,
       path: this.path || '',
+      isHidden: this.getIsHidden()
     };
   }
 
@@ -220,5 +221,21 @@ export class ControllerGenerator {
 
       return { key: customAttr.key, value: JSON.parse(attributeValue) };
     });
+  }
+
+  private getIsHidden() {
+    const hiddenDecorators = this.getDecoratorsByIdentifier(this.node, 'Hidden');
+    if (!hiddenDecorators || !hiddenDecorators.length) {
+      return false;
+    }
+    if (hiddenDecorators.length > 1) {
+      throw new GenerateMetadataError(`Only one Hidden decorator allowed in '${this.path}' controller.`);
+    }
+
+    return true;
+  }
+
+  private getDecoratorsByIdentifier(node: ts.Node, id: string) {
+    return getDecorators(node, (identifier) => identifier.text === id);
   }
 }
