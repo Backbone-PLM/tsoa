@@ -13,6 +13,7 @@ export class ParameterGenerator {
     private readonly method: string,
     private readonly path: string,
     private readonly current: MetadataGenerator,
+    private readonly genericTypeMap?: Tsoa.GenericTypeMap,
   ) { }
 
   public Generate(): Tsoa.Parameter {
@@ -196,6 +197,6 @@ export class ParameterGenerator {
       const type = this.current.typeChecker.getTypeAtLocation(parameter);
       typeNode = this.current.typeChecker.typeToTypeNode(type) as ts.TypeNode;
     }
-    return new TypeResolver(typeNode, this.current, parameter, extractEnum).resolve();
+    return new TypeResolver(typeNode, this.current, parameter, extractEnum, this.genericTypeMap).resolve();
   }
 }

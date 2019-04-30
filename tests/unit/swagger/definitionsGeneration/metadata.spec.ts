@@ -14,7 +14,7 @@ describe('Metadata generation', () => {
     });
   });
 
-  describe('InheritedMethodGenerator', () => {
+  describe('InheritedMethodGenerator (with generics)', () => {
     const inheritanceMetadata = new MetadataGenerator('./tests/fixtures/controllers/inheritanceMethodController.ts').Generate();
     const emptySuperMetadata = new MetadataGenerator('./tests/fixtures/controllers/emptySuperClassGenericController.ts').Generate();
     const duplicateGenerator = new MetadataGenerator('./tests/fixtures/controllers/duplicateMethodController.ts');
@@ -46,6 +46,24 @@ describe('Metadata generation', () => {
       expect(method.name).to.equal('superBasePatch');
       expect((method.type as Tsoa.ReferenceType).refName).to.equal('TestModel');
     });
+
+    it('should properly resolve generic parameter types within method signatures', () => {
+      const postMethod = inheritanceController.methods.find(m => m.name === 'postMethod');
+      const putMethod = inheritanceController.methods.find(m => m.name === 'putMethod');
+
+      if (!postMethod) {
+        throw new Error('Method postMethod not defined!');
+      }
+      if (!putMethod) {
+        throw new Error('Method putMethod not defined!');
+      }
+
+      expect(postMethod.parameters.length).to.equal(1);
+      expect((postMethod.parameters[0].type as Tsoa.ReferenceType).refName).to.equal('TestModel');
+      expect(putMethod.parameters.length).to.equal(2);
+      expect((putMethod.parameters[0].type as Tsoa.ReferenceType).refName).to.equal('TestModel');
+      expect((putMethod.parameters[1].type as Tsoa.ReferenceType).refName).to.equal('TestModel');
+    })
 
     it('should inherit postMethod from BaseController when super class file is a stub', () => {
       const method = emptySuperController.methods.find(m => m.name === 'postMethod');
