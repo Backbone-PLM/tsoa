@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Post, Put } from '../../../src'
+import { Controller, Get, Patch, Post, Put, Body, BodyProp } from '../../../src'
 import { ModelService } from '../services/modelService'
 
 class SuperBaseController<T> extends Controller {
@@ -15,7 +15,7 @@ export class BaseController<T> extends SuperBaseController<T> {
   }
 
   @Post('Post')
-  public async postMethod(): Promise<T> {
+  public async postMethod(@Body() obj: T): Promise<T> {
     return (new ModelService().getModel() as unknown) as T
   }
 
@@ -25,7 +25,7 @@ export class BaseController<T> extends SuperBaseController<T> {
   }
 
   @Put('OverwrittenMethod')
-  public async putMethod(): Promise<T> {
+  public async putMethod(@BodyProp() param1: T, @BodyProp() param2: T): Promise<T> {
     return (new ModelService().getModel() as unknown) as T
   }
 }

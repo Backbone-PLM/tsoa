@@ -65,7 +65,7 @@ export class MethodGenerator {
   private buildParameters() {
     const parameters = this.node.parameters.map((p) => {
       try {
-        return new ParameterGenerator(p, this.method, this.path, this.current).Generate();
+        return new ParameterGenerator(p, this.method, this.path, this.current, this.genericTypeMap).Generate();
       } catch (e) {
         const methodId = this.node.name as ts.Identifier;
         const controllerId = (this.node.parent as ts.ClassDeclaration).name as ts.Identifier;
@@ -80,7 +80,7 @@ export class MethodGenerator {
       throw new GenerateMetadataError(`Only one body parameter allowed in '${this.getCurrentLocation()}' method.`);
     }
     if (bodyParameters.length > 0 && bodyProps.length > 0) {
-      throw new GenerateMetadataError(`Choose either during @Body or @BodyProp in '${this.getCurrentLocation()}' method.`);
+      throw new GenerateMetadataError(`Choose either @Body or @BodyProp in '${this.getCurrentLocation()}' method.`);
     }
     return parameters;
   }
