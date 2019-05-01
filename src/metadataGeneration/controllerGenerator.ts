@@ -131,7 +131,7 @@ export class ControllerGenerator {
   // generic type parameters so that the TypeResolver can find them
   private getResolvedGenericTypeMap(typeNode: ts.Type) {
     // using a map of maps, where the top level keys represent the names of the base
-    // classes and whose values are maps in the form of `typeT->resolvedModel`.
+    // classes and whose values are maps in the form of `typeT->resolvedDeclaration`.
     // this will allow the TypeResolver to correctly find, for example, that a generic
     // type parameter `T` defined on a nested base class method resolves to some model `Foo`,
     // because at the top of the inheritance chain the concrete class used `Foo` as `T`
@@ -185,11 +185,11 @@ export class ControllerGenerator {
               const nestedBaseTypeMap = genericTypeMap.get(key);
 
               if (nestedBaseTypeMap) {
-                value.forEach((resolvedTypeName, genericTypeName) => {
+                value.forEach((resolvedDeclaration, genericTypeName) => {
                   // if type params (keys in the map) in the nested base types match a key
                   // one level up, it ultimately means they should resolve to the same type
-                  const baseResolvedTypeName = baseTypeMap.get(genericTypeName) || resolvedTypeName;
-                  nestedBaseTypeMap.set(genericTypeName, baseResolvedTypeName);
+                  const baseResolvedDeclaration = baseTypeMap.get(genericTypeName) || resolvedDeclaration;
+                  nestedBaseTypeMap.set(genericTypeName, baseResolvedDeclaration);
                 });
               }
             });
