@@ -4,14 +4,24 @@ import { MetadataGenerator } from '../../../../src/metadataGeneration/metadataGe
 import { Tsoa } from '../../../../src/metadataGeneration/tsoa';
 
 describe('Metadata generation', () => {
-  const metadata = new MetadataGenerator('./tests/fixtures/controllers/getController.ts').Generate();
 
   describe('ControllerGenerator', () => {
     it('should generate one controller', () => {
+      const metadata = new MetadataGenerator('./tests/fixtures/controllers/getController.ts').Generate();
+      
       expect(metadata.controllers.length).to.equal(1);
       expect(metadata.controllers[0].name).to.equal('GetTestController');
       expect(metadata.controllers[0].path).to.equal('GetTest');
     });
+
+    it('should generate hidden controllers', () => {
+      const metadata = new MetadataGenerator('./tests/fixtures/controllers/hiddenController.ts').Generate();
+      
+      expect(metadata.controllers.length).to.equal(1);
+      expect(metadata.controllers[0].name).to.equal('HiddenController');
+      expect(metadata.controllers[0].path).to.equal('HiddenController');
+      expect(metadata.controllers[0].isHidden).to.equal(true);
+    })
   });
 
   describe('InheritedMethodGenerator (with generics)', () => {

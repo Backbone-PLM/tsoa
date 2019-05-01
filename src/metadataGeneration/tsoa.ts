@@ -11,6 +11,7 @@ export namespace Tsoa {
     methods: Method[];
     name: string;
     path: string;
+    isHidden: boolean;
   }
 
   export interface Method {

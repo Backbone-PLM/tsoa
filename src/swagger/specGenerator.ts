@@ -83,7 +83,8 @@ export class SpecGenerator {
   private buildPaths() {
     const paths: { [pathName: string]: Swagger.Path } = {};
 
-    this.metadata.controllers.forEach(controller => {
+    // construct documentation using all controllers except @Hidden
+    this.metadata.controllers.filter(controller => !controller.isHidden).forEach(controller => {
       const normalisedControllerPath = normalisePath(controller.path, '/');
       // construct documentation using all methods except @Hidden
       controller.methods.filter(method => !method.isHidden).forEach(method => {
