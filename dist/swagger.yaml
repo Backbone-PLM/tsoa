@@ -383,14 +383,6 @@ definitions:
         required:
             - result
         type: object
-    IncorrectResponseType:
-        properties:
-            wrong:
-                type: boolean
-                x-nullable: true
-        type: object
-        additionalProperties:
-            type: object
     GenericRequestTestModel:
         properties:
             name:
@@ -701,7 +693,7 @@ paths:
                                 - true
                                 - false
                             boolValue: true
-                            dateValue: '2019-04-10T21:22:50.847Z'
+                            dateValue: '2019-05-30T19:09:16.209Z'
                             id: 1
                             modelValue:
                                 email: test@test.com
@@ -1065,18 +1057,6 @@ paths:
                         $ref: '#/definitions/TestModel'
             security: []
             parameters: []
-    /InheritedMethodTest/OverwrittenMethod:
-        put:
-            operationId: PutMethod
-            produces:
-                - application/json
-            responses:
-                '200':
-                    description: Ok
-                    schema:
-                        $ref: '#/definitions/TestModel'
-            security: []
-            parameters: []
     /InheritedMethodTest/Post:
         post:
             operationId: PostMethod
@@ -1088,7 +1068,13 @@ paths:
                     schema:
                         $ref: '#/definitions/TestModel'
             security: []
-            parameters: []
+            parameters:
+                -
+                    in: body
+                    name: obj
+                    required: true
+                    schema:
+                        $ref: '#/definitions/TestModel'
     /InheritedMethodTest/Base:
         get:
             operationId: BaseMethod
@@ -1101,6 +1087,32 @@ paths:
                         $ref: '#/definitions/TestModel'
             security: []
             parameters: []
+    /InheritedMethodTest/OverwrittenMethod:
+        put:
+            operationId: PutMethod
+            produces:
+                - application/json
+            responses:
+                '200':
+                    description: Ok
+                    schema:
+                        $ref: '#/definitions/TestModel'
+            security: []
+            parameters:
+                -
+                    in: body
+                    name: body
+                    schema:
+                        properties:
+                            param1:
+                                $ref: '#/definitions/TestModel'
+                            param2:
+                                $ref: '#/definitions/TestModel'
+                        title: PutMethodBody
+                        type: object
+                        required:
+                            - param1
+                            - param2
     /InheritedMethodTest/SuperBasePatch:
         patch:
             operationId: SuperBasePatch
@@ -1584,6 +1596,43 @@ paths:
                     tsoa_auth:
                         - 'write:pets'
                         - 'read:pets'
+            parameters: []
+    /MethodTest/CustomAttribute:
+        get:
+            operationId: CustomAttribute
+            produces:
+                - application/json
+            responses:
+                '200':
+                    description: Ok
+                    schema:
+                        $ref: '#/definitions/TestModel'
+            security: []
+            parameters: []
+            attKey: attValue
+            attKey1:
+                test: testVal
+            attKey2:
+                - y0
+                - y1
+            attKey3:
+                -
+                    y0: yt0
+                    y1: yt1
+                -
+                    y2: yt2
+    /MethodTest/InterpolatedDescription:
+        get:
+            operationId: InterpolatedDescription
+            produces:
+                - application/json
+            responses:
+                '200':
+                    description: Ok
+                    schema:
+                        $ref: '#/definitions/TestModel'
+            description: 'MethodTest InterpolatedDescription GET customString'
+            security: []
             parameters: []
     /MethodTest/DeprecatedMethod:
         get:

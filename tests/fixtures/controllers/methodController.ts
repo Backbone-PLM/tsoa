@@ -11,11 +11,14 @@ import {
   Security,
   SuccessResponse,
   Tags,
+  Template,
 } from '../../../src';
 import { ModelService } from '../services/modelService';
 import { ErrorResponseModel, TestModel } from '../testModel';
 
+
 @Route('MethodTest')
+@Template({ CUSTOM: 'customString'})
 export class MethodController extends Controller {
 
     @Get('Get')
@@ -110,7 +113,7 @@ export class MethodController extends Controller {
     }
 
     /**
-     * {$ROUTE} {$PATH} {$METHOD}
+     * {$ROUTE} {$PATH} {$METHOD} {$CUSTOM}
      */
     @Get('InterpolatedDescription')
     public async interpolatedDescription(): Promise<TestModel> {

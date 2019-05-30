@@ -14,6 +14,7 @@ __export(require("./decorators/operationid"));
 __export(require("./decorators/route"));
 __export(require("./decorators/security"));
 __export(require("./decorators/customAttribute"));
+__export(require("./decorators/template"));
 __export(require("./interfaces/controller"));
 __export(require("./decorators/response"));
 __export(require("./routeGeneration/templateHelpers"));

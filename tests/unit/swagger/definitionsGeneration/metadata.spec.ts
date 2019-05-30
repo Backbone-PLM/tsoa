@@ -8,7 +8,7 @@ describe('Metadata generation', () => {
   describe('ControllerGenerator', () => {
     it('should generate one controller', () => {
       const metadata = new MetadataGenerator('./tests/fixtures/controllers/getController.ts').Generate();
-      
+
       expect(metadata.controllers.length).to.equal(1);
       expect(metadata.controllers[0].name).to.equal('GetTestController');
       expect(metadata.controllers[0].path).to.equal('GetTest');
@@ -16,12 +16,12 @@ describe('Metadata generation', () => {
 
     it('should generate hidden controllers', () => {
       const metadata = new MetadataGenerator('./tests/fixtures/controllers/hiddenController.ts').Generate();
-      
+
       expect(metadata.controllers.length).to.equal(1);
       expect(metadata.controllers[0].name).to.equal('HiddenController');
       expect(metadata.controllers[0].path).to.equal('HiddenController');
       expect(metadata.controllers[0].isHidden).to.equal(true);
-    })
+    });
   });
 
   describe('InheritedMethodGenerator (with generics)', () => {
@@ -73,7 +73,7 @@ describe('Metadata generation', () => {
       expect(putMethod.parameters.length).to.equal(2);
       expect((putMethod.parameters[0].type as Tsoa.ReferenceType).refName).to.equal('TestModel');
       expect((putMethod.parameters[1].type as Tsoa.ReferenceType).refName).to.equal('TestModel');
-    })
+    });
 
     it('should inherit postMethod from BaseController when super class file is a stub', () => {
       const method = emptySuperController.methods.find(m => m.name === 'postMethod');
@@ -354,7 +354,7 @@ describe('Metadata generation', () => {
         throw new Error('No description was generated!');
       }
 
-      expect(method.description).to.equal('MethodTest InterpolatedDescription GET');
+      expect(method.description).to.equal('MethodTest InterpolatedDescription GET customString');
     });
 
     it('should generate deprecated method true', () => {
