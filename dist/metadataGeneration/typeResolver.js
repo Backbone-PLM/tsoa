@@ -15,13 +15,24 @@ syntaxKindMap[ts.SyntaxKind.VoidKeyword] = 'void';
 var localReferenceTypeCache = {};
 var inProgressTypes = {};
 var TypeResolver = /** @class */ (function () {
-    function TypeResolver(typeNode, current, parentNode, extractEnum) {
+    function TypeResolver(typeNode, current, parentNode, extractEnum, genericTypeMap) {
         if (extractEnum === void 0) { extractEnum = true; }
         this.typeNode = typeNode;
         this.current = current;
         this.parentNode = parentNode;
         this.extractEnum = extractEnum;
+        this.genericTypeMap = genericTypeMap;
     }
+    TypeResolver.nodeIsUsable = function (node) {
+        switch (node.kind) {
+            case ts.SyntaxKind.InterfaceDeclaration:
+            case ts.SyntaxKind.ClassDeclaration:
+            case ts.SyntaxKind.TypeAliasDeclaration:
+            case ts.SyntaxKind.EnumDeclaration:
+                return true;
+            default: return false;
+        }
+    };
     TypeResolver.prototype.resolve = function () {
         var primitiveType = this.getPrimitiveType(this.typeNode, this.parentNode);
         if (primitiveType) {
@@ -73,11 +84,11 @@ var TypeResolver = /** @class */ (function () {
             if (typeReference.typeName.text === 'Array' && typeReference.typeArguments && typeReference.typeArguments.length === 1) {
                 return {
                     dataType: 'array',
-                    elementType: new TypeResolver(typeReference.typeArguments[0], this.current).resolve(),
+                    elementType: new TypeResolver(typeReference.typeArguments[0], this.current, undefined, true, this.genericTypeMap).resolve(),
                 };
             }
             if (typeReference.typeName.text === 'Promise' && typeReference.typeArguments && typeReference.typeArguments.length === 1) {
-                return new TypeResolver(typeReference.typeArguments[0], this.current).resolve();
+                return new TypeResolver(typeReference.typeArguments[0], this.current, undefined, true, this.genericTypeMap).resolve();
             }
             if (typeReference.typeName.text === 'String') {
                 return { dataType: 'string' };
@@ -93,6 +104,9 @@ var TypeResolver = /** @class */ (function () {
         if (literalType) {
             return literalType;
         }
+        var primitiveFromGenericTypeName = this.resolvePrimitiveTypeFromMap(this.resolveFqTypeName(typeReference.typeName));
+        if (primitiveFromGenericTypeName)
+            return primitiveFromGenericTypeName;
         var referenceType;
         if (typeReference.typeArguments && typeReference.typeArguments.length === 1) {
             var typeT = typeReference.typeArguments;
@@ -109,6 +123,9 @@ var TypeResolver = /** @class */ (function () {
         if (!primitiveType) {
             return;
         }
+        return this.getPrimitiveTypeByString(primitiveType, parentNode);
+    };
+    TypeResolver.prototype.getPrimitiveTypeByString = function (primitiveType, parentNode) {
         if (primitiveType === 'number') {
             if (!parentNode) {
                 return { dataType: 'double' };
@@ -226,6 +243,11 @@ var TypeResolver = /** @class */ (function () {
             if (existingType) {
                 return existingType;
             }
+            // check the cache for fully resolved types from the generic map
+            var resolvedGenericType = this.resolveGenericTypeFromMap(typeName);
+            if (resolvedGenericType) {
+                return resolvedGenericType;
+            }
             var referenceEnumType = this.getEnumerateType(type, true);
             if (referenceEnumType) {
                 localReferenceTypeCache[refNameWithGenerics] = referenceEnumType;
@@ -235,7 +257,11 @@ var TypeResolver = /** @class */ (function () {
                 return this.createCircularDependencyResolver(refNameWithGenerics);
             }
             inProgressTypes[refNameWithGenerics] = true;
-            var modelType = this.getModelTypeDeclaration(type);
+            // if there is a matching Tsoa.UsableDeclaration entry in the generic map, use that
+            var resolvedGenericDeclaration = this.resolveGenericDeclarationFromMap(typeName);
+            var modelType = !resolvedGenericDeclaration || typeof resolvedGenericDeclaration === 'string'
+                ? this.getModelTypeDeclaration(type)
+                : resolvedGenericDeclaration;
             var properties = this.getModelProperties(modelType, genericTypes);
             var additionalProperties = this.getModelAdditionalProperties(modelType);
             var inheritedProperties = this.getModelInheritedProperties(modelType) || [];
@@ -260,8 +286,56 @@ var TypeResolver = /** @class */ (function () {
             throw err;
         }
     };
+    TypeResolver.prototype.resolveGenericDeclarationFromMap = function (typeName, typeNode) {
+        if (typeNode === void 0) { typeNode = this.typeNode; }
+        if (!this.genericTypeMap)
+            return undefined;
+        // traverse the syntax tree upwards until we find a class declaration that has an entry in the
+        // passed in genericTypeMap, with a corresponding mapping of a generic template variable to a 
+        // resolved type. if found, return it. if we hit the top of the tree without finding it, return
+        // undefined
+        if (typeNode.kind === ts.SyntaxKind.ClassDeclaration) {
+            var baseClass = typeNode;
+            if (baseClass && baseClass.name) {
+                var baseClassMap = this.genericTypeMap.get(baseClass.name.text);
+                if (baseClassMap) {
+                    var resolvedTypeName = baseClassMap.get(typeName);
+                    if (resolvedTypeName) {
+                        return resolvedTypeName;
+                    }
+                }
+            }
+        }
+        if (typeNode.parent) {
+            return this.resolveGenericDeclarationFromMap(typeName, typeNode.parent);
+        }
+        return undefined;
+    };
+    TypeResolver.prototype.resolvePrimitiveTypeFromMap = function (typeName) {
+        var resolvedTypeName = this.resolveGenericDeclarationFromMap(typeName);
+        if (!resolvedTypeName || typeof resolvedTypeName !== 'string')
+            return undefined;
+        var primitiveKind = Object.values(syntaxKindMap).find(function (v) { return v.toLowerCase() === resolvedTypeName.toLowerCase(); });
+        if (primitiveKind) {
+            return this.getPrimitiveTypeByString(primitiveKind);
+        }
+        return undefined;
+    };
+    TypeResolver.prototype.resolveGenericTypeFromMap = function (typeName) {
+        var resolvedTypeName = this.resolveGenericDeclarationFromMap(typeName);
+        if (!resolvedTypeName)
+            return undefined;
+        var typeNameString = typeof resolvedTypeName === 'string'
+            ? resolvedTypeName
+            : resolvedTypeName.name.text;
+        return localReferenceTypeCache[typeNameString];
+    };
     TypeResolver.prototype.resolveFqTypeName = function (type) {
         if (type.kind === ts.SyntaxKind.Identifier) {
+            var typeReference = type.parent;
+            if (typeReference && typeReference.symbol) {
+                return this.current.typeChecker.getFullyQualifiedName(typeReference.symbol).replace(/^("[^"]*"\.)?(.*)/, '$2');
+            }
             return type.text;
         }
         var qualifiedType = type;
@@ -270,7 +344,12 @@ var TypeResolver = /** @class */ (function () {
     TypeResolver.prototype.getTypeName = function (typeName, genericTypes) {
         var _this = this;
         if (!genericTypes || !genericTypes.length) {
-            return typeName;
+            var resolvedTypeName = this.resolveGenericDeclarationFromMap(typeName);
+            if (!resolvedTypeName)
+                return typeName;
+            return typeof resolvedTypeName === 'string'
+                ? resolvedTypeName
+                : this.resolveFqTypeName(resolvedTypeName.name);
         }
         return typeName + genericTypes.map(function (t) { return _this.getAnyTypeName(t); }).join('');
     };
@@ -318,14 +397,7 @@ var TypeResolver = /** @class */ (function () {
         return referenceType;
     };
     TypeResolver.prototype.nodeIsUsable = function (node) {
-        switch (node.kind) {
-            case ts.SyntaxKind.InterfaceDeclaration:
-            case ts.SyntaxKind.ClassDeclaration:
-            case ts.SyntaxKind.TypeAliasDeclaration:
-            case ts.SyntaxKind.EnumDeclaration:
-                return true;
-            default: return false;
-        }
+        return TypeResolver.nodeIsUsable(node);
     };
     TypeResolver.prototype.resolveLeftmostIdentifier = function (type) {
         while (type.kind !== ts.SyntaxKind.Identifier) {
@@ -378,7 +450,8 @@ var TypeResolver = /** @class */ (function () {
                 return false;
             }
             var modelTypeDeclaration = node;
-            return modelTypeDeclaration.name.text === typeName;
+            var text = modelTypeDeclaration.name.text;
+            return text === typeName;
         });
         if (!modelTypes.length) {
             throw new exceptions_1.GenerateMetadataError("No matching model found for referenced type " + typeName + ".");

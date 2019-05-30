@@ -50,31 +50,28 @@ var MetadataGenerator = /** @class */ (function () {
     MetadataGenerator.prototype.OnFinish = function (callback) {
         this.circularDependencyResolvers.push(callback);
     };
-    MetadataGenerator.prototype.getInheritedMethods = function (controller, controllerList) {
-        var _this = this;
-        var inheritedClasses = controllerList.filter(function (_a) {
-            var name = _a.name;
-            return controller.inheritanceList.includes(name);
+    MetadataGenerator.prototype.checkForDuplicateMethods = function (controllers) {
+        var methodSet = new Set();
+        controllers.forEach(function (controller) {
+            controller.methods.forEach(function (_a) {
+                var method = _a.method, path = _a.path;
+                var methodIdentifier = method.toUpperCase() + " /" + controller.path + "/" + path;
+                if (methodSet.has(methodIdentifier)) {
+                    throw new Error("Duplicate method for path '" + methodIdentifier + "' was found");
+                }
+                methodSet.add(methodIdentifier);
+            });
         });
-        var methods = inheritedClasses.reduce(function (acc, item) { return acc.concat(item.methods); }, []);
-        return inheritedClasses.reduce(function (acc, item) { return acc.concat(_this.getInheritedMethods(item, controllerList)); }, methods);
     };
     MetadataGenerator.prototype.buildControllers = function () {
         var _this = this;
         var controllerGenerators = this.nodes
             .filter(function (node) { return node.kind === ts.SyntaxKind.ClassDeclaration && _this.IsExportedNode(node); })
             .map(function (classDeclaration) { return new controllerGenerator_1.ControllerGenerator(classDeclaration, _this); });
-        // Need a list of all controllers with decorated methods for determining heritage on valid controllers.
-        var allControllers = controllerGenerators.map(function (generator) { return generator.Generate(); });
         var validControllers = controllerGenerators
             .filter(function (controllerGenerator) { return controllerGenerator.IsValid(); })
             .map(function (generator) { return generator.Generate(); });
-        // Attach all decorated methods, including those on parent classes, to the controller.
-        // Reverse the array so that children with the same decorated method will overwrite the parent method.
-        validControllers.forEach(function (controller) {
-            var _a;
-            return (_a = controller.methods).push.apply(_a, _this.getInheritedMethods(controller, allControllers));
-        });
+        this.checkForDuplicateMethods(validControllers);
         return validControllers;
     };
     return MetadataGenerator;

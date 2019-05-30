@@ -5,6 +5,7 @@ import { GenerateMetadataError } from './exceptions';
 import { MetadataGenerator } from './metadataGenerator';
 import { MethodGenerator } from './methodGenerator';
 import { getSecurities } from './security';
+import { getTemplate } from './template';
 import { Tsoa } from './tsoa';
 import { TypeResolver } from './typeResolver';
 
@@ -13,6 +14,7 @@ export class ControllerGenerator {
   private readonly tags?: string[];
   private readonly security?: Tsoa.Security[];
   private readonly customMethodAttributes: Tsoa.CustomAttribute[];
+  private readonly template: Map<string, string>;
 
   constructor(
     private readonly node: ts.ClassDeclaration,
@@ -22,6 +24,7 @@ export class ControllerGenerator {
     this.tags = this.getTags();
     this.security = this.getSecurity();
     this.customMethodAttributes = this.getCustomMethodAttributes();
+    this.template = this.getTemplate();
   }
 
   public IsValid() {
@@ -39,11 +42,11 @@ export class ControllerGenerator {
     const sourceFile = this.node.parent.getSourceFile();
 
     return {
+      isHidden: this.getIsHidden(),
       location: sourceFile.fileName,
       methods: this.buildMethods(),
       name: this.node.name.text,
       path: this.path || '',
-      isHidden: this.getIsHidden()
     };
   }
 
@@ -59,10 +62,10 @@ export class ControllerGenerator {
       .map((generator) => generator.Generate());
 
     methods.forEach((method) => {
-      const stringValueMap = new Map<string, string>([
-        ['PATH', method.path],
-        ['METHOD', method.method.toUpperCase()],
-      ]);
+      const stringValueMap = new Map<string, string>(this.template);
+
+      stringValueMap.set('PATH', method.path);
+      stringValueMap.set('METHOD', method.method.toUpperCase());
 
       if (this.path) {
         stringValueMap.set('ROUTE', this.path);
@@ -125,6 +128,20 @@ export class ControllerGenerator {
     }
 
     return getCustomAttributes(customAttributeDecorators);
+  }
+
+  private getTemplate(): Map<string, string> {
+    const templateDecorators = getDecorators(this.node, (identifier) => identifier.text === 'Template');
+
+    if (!templateDecorators || !templateDecorators.length) {
+      return new Map<string, string>();
+    }
+
+    if (templateDecorators.length > 1) {
+      throw new GenerateMetadataError(`Only one Template decorator allowed in '${this.node.name!.text}' class.`);
+    }
+
+    return getTemplate(templateDecorators[0]);
   }
 
   // given a type, traverses any base classes (recursively) and creates a map of any

@@ -1,16 +1,18 @@
+import * as ts from 'typescript';
 export declare namespace Tsoa {
     interface Metadata {
         controllers: Controller[];
         referenceTypeMap: ReferenceTypeMap;
     }
     interface Controller {
-        inheritanceList: string[];
         location: string;
         methods: Method[];
         name: string;
         path: string;
+        isHidden: boolean;
     }
     interface Method {
+        customAttributes: CustomAttribute[];
         deprecated?: boolean;
         description?: string;
         method: 'get' | 'post' | 'put' | 'delete' | 'options' | 'head' | 'patch' | 'head';
@@ -48,6 +50,10 @@ export declare namespace Tsoa {
     interface Security {
         [key: string]: string[];
     }
+    interface CustomAttribute {
+        key: string;
+        value: string | any[] | object;
+    }
     interface Response {
         description: string;
         name: string;
@@ -83,7 +89,9 @@ export declare namespace Tsoa {
         enums?: string[];
         example?: any;
     }
+    type UsableDeclaration = ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration;
     interface ReferenceTypeMap {
         [refName: string]: Tsoa.ReferenceType;
     }
+    type GenericTypeMap = Map<string, Map<string, string | UsableDeclaration>>;
 }

@@ -7,6 +7,8 @@ export declare class ControllerGenerator {
     private readonly path?;
     private readonly tags?;
     private readonly security?;
+    private readonly customMethodAttributes;
+    private readonly template;
     constructor(node: ts.ClassDeclaration, current: MetadataGenerator);
     IsValid(): boolean;
     Generate(): Tsoa.Controller;
@@ -14,5 +16,11 @@ export declare class ControllerGenerator {
     private getPath;
     private getTags;
     private getSecurity;
-    private getInheritanceList;
+    private getCustomMethodAttributes;
+    private getTemplate;
+    private getResolvedGenericTypeMap;
+    private interpolateString;
+    private resolveCustomAttributes;
+    private getIsHidden;
+    private getDecoratorsByIdentifier;
 }

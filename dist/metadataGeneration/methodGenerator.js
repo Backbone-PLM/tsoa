@@ -2,17 +2,19 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var decoratorUtils_1 = require("./../utils/decoratorUtils");
 var jsDocUtils_1 = require("./../utils/jsDocUtils");
+var customAttribute_1 = require("./customAttribute");
 var exceptions_1 = require("./exceptions");
 var initializer_value_1 = require("./initializer-value");
 var parameterGenerator_1 = require("./parameterGenerator");
 var security_1 = require("./security");
 var typeResolver_1 = require("./typeResolver");
 var MethodGenerator = /** @class */ (function () {
-    function MethodGenerator(node, current, parentTags, parentSecurity) {
+    function MethodGenerator(node, current, parentTags, parentSecurity, genericTypeMap) {
         this.node = node;
         this.current = current;
         this.parentTags = parentTags;
         this.parentSecurity = parentSecurity;
+        this.genericTypeMap = genericTypeMap;
         this.processMethodDecorators();
     }
     MethodGenerator.prototype.IsValid = function () {
@@ -29,10 +31,11 @@ var MethodGenerator = /** @class */ (function () {
             var implicitType = typeChecker.getReturnTypeOfSignature(signature);
             nodeType = typeChecker.typeToTypeNode(implicitType);
         }
-        var type = new typeResolver_1.TypeResolver(nodeType, this.current).resolve();
+        var type = new typeResolver_1.TypeResolver(nodeType, this.current, undefined, true, this.genericTypeMap).resolve();
         var responses = this.getMethodResponses();
         responses.push(this.getMethodSuccessResponse(type));
         return {
+            customAttributes: this.getCustomAttributes(),
             deprecated: jsDocUtils_1.isExistJSDocTag(this.node, function (tag) { return tag.tagName.text === 'deprecated'; }),
             description: jsDocUtils_1.getJSDocDescription(this.node),
             isHidden: this.getIsHidden(),
@@ -52,7 +55,7 @@ var MethodGenerator = /** @class */ (function () {
         var _this = this;
         var parameters = this.node.parameters.map(function (p) {
             try {
-                return new parameterGenerator_1.ParameterGenerator(p, _this.method, _this.path, _this.current).Generate();
+                return new parameterGenerator_1.ParameterGenerator(p, _this.method, _this.path, _this.current, _this.genericTypeMap).Generate();
             }
             catch (e) {
                 var methodId = _this.node.name;
@@ -66,9 +69,16 @@ var MethodGenerator = /** @class */ (function () {
             throw new exceptions_1.GenerateMetadataError("Only one body parameter allowed in '" + this.getCurrentLocation() + "' method.");
         }
         if (bodyParameters.length > 0 && bodyProps.length > 0) {
-            throw new exceptions_1.GenerateMetadataError("Choose either during @Body or @BodyProp in '" + this.getCurrentLocation() + "' method.");
+            throw new exceptions_1.GenerateMetadataError("Choose either @Body or @BodyProp in '" + this.getCurrentLocation() + "' method.");
         }
         return parameters;
+    };
+    MethodGenerator.prototype.getCustomAttributes = function () {
+        var customAttributeDecorators = this.getDecoratorsByIdentifier(this.node, 'CustomAttribute');
+        if (!customAttributeDecorators || !customAttributeDecorators.length) {
+            return [];
+        }
+        return customAttribute_1.getCustomAttributes(customAttributeDecorators);
     };
     MethodGenerator.prototype.getCurrentLocation = function () {
         var methodId = this.node.name;

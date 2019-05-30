@@ -87,7 +87,8 @@ var SpecGenerator = /** @class */ (function () {
     SpecGenerator.prototype.buildPaths = function () {
         var _this = this;
         var paths = {};
-        this.metadata.controllers.forEach(function (controller) {
+        // construct documentation using all controllers except @Hidden
+        this.metadata.controllers.filter(function (controller) { return !controller.isHidden; }).forEach(function (controller) {
             var normalisedControllerPath = pathUtils_1.normalisePath(controller.path, '/');
             // construct documentation using all methods except @Hidden
             controller.methods.filter(function (method) { return !method.isHidden; }).forEach(function (method) {
@@ -105,8 +106,12 @@ var SpecGenerator = /** @class */ (function () {
         pathMethod.description = method.description;
         pathMethod.summary = method.summary;
         pathMethod.tags = method.tags;
+        var routeName = controllerName.replace('Controller', '');
+        var defaultOperationId = this.config.prefixOperationIds
+            ? "" + routeName + pathMethod.operationId
+            : pathMethod.operationId;
         // Use operationId tag otherwise fallback to generated. Warning: This doesn't check uniqueness.
-        pathMethod.operationId = method.operationId || pathMethod.operationId;
+        pathMethod.operationId = method.operationId || defaultOperationId;
         if (method.deprecated) {
             pathMethod.deprecated = method.deprecated;
         }
@@ -125,6 +130,8 @@ var SpecGenerator = /** @class */ (function () {
         if (pathMethod.parameters.filter(function (p) { return p.in === 'body'; }).length > 1) {
             throw new Error('Only one body parameter allowed per controller method.');
         }
+        // Apply custom attributes
+        method.customAttributes.forEach(function (customAttr) { return pathMethod[customAttr.key] = customAttr.value; });
     };
     SpecGenerator.prototype.buildBodyPropParameter = function (controllerName, method) {
         var _this = this;
@@ -229,7 +236,7 @@ var SpecGenerator = /** @class */ (function () {
                     swaggerType[key] = property.validators[key].value;
                 });
             }
-            if (!property.required) {
+            if (!_this.config.no_x_nullable && !property.required) {
                 swaggerType['x-nullable'] = true;
             }
             properties[property.name] = swaggerType;

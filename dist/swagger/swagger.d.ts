@@ -112,6 +112,7 @@ export declare namespace Swagger {
         schemes?: Protocol[];
         deprecated?: boolean;
         security?: Security[];
+        [key: string]: any;
     }
     interface Response {
         description: string;

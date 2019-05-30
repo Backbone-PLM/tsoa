@@ -6,7 +6,8 @@ export declare class ParameterGenerator {
     private readonly method;
     private readonly path;
     private readonly current;
-    constructor(parameter: ts.ParameterDeclaration, method: string, path: string, current: MetadataGenerator);
+    private readonly genericTypeMap?;
+    constructor(parameter: ts.ParameterDeclaration, method: string, path: string, current: MetadataGenerator, genericTypeMap?: Map<string, Map<string, string | ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration>> | undefined);
     Generate(): Tsoa.Parameter;
     private getRequestParameter;
     private getBodyPropParameter;

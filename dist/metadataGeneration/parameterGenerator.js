@@ -18,11 +18,12 @@ var exceptions_1 = require("./exceptions");
 var initializer_value_1 = require("./initializer-value");
 var typeResolver_1 = require("./typeResolver");
 var ParameterGenerator = /** @class */ (function () {
-    function ParameterGenerator(parameter, method, path, current) {
+    function ParameterGenerator(parameter, method, path, current, genericTypeMap) {
         this.parameter = parameter;
         this.method = method;
         this.path = path;
         this.current = current;
+        this.genericTypeMap = genericTypeMap;
     }
     ParameterGenerator.prototype.Generate = function () {
         var _this = this;
@@ -178,7 +179,7 @@ var ParameterGenerator = /** @class */ (function () {
             var type = this.current.typeChecker.getTypeAtLocation(parameter);
             typeNode = this.current.typeChecker.typeToTypeNode(type);
         }
-        return new typeResolver_1.TypeResolver(typeNode, this.current, parameter, extractEnum).resolve();
+        return new typeResolver_1.TypeResolver(typeNode, this.current, parameter, extractEnum, this.genericTypeMap).resolve();
     };
     return ParameterGenerator;
 }());

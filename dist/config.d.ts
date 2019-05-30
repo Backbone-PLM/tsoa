@@ -81,7 +81,13 @@ export interface SwaggerConfig {
      * Swagger Tags Information for your API
      */
     tags?: Swagger.Tag[];
+    /**
+     * Prefixes all operationId methods with controller name
+     * Useful for controllers with inheritance
+     */
+    prefixOperationIds?: boolean;
     yaml?: boolean;
+    no_x_nullable?: boolean;
     schemes?: Swagger.Protocol[];
 }
 export interface RoutesConfig {

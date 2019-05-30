@@ -6,12 +6,14 @@ export declare class MethodGenerator {
     private readonly current;
     private readonly parentTags?;
     private readonly parentSecurity?;
+    private readonly genericTypeMap?;
     private method;
     private path;
-    constructor(node: ts.MethodDeclaration, current: MetadataGenerator, parentTags?: string[] | undefined, parentSecurity?: Tsoa.Security[] | undefined);
+    constructor(node: ts.MethodDeclaration, current: MetadataGenerator, parentTags?: string[] | undefined, parentSecurity?: Tsoa.Security[] | undefined, genericTypeMap?: Map<string, Map<string, string | ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration>> | undefined);
     IsValid(): boolean;
     Generate(): Tsoa.Method;
     private buildParameters;
+    private getCustomAttributes;
     private getCurrentLocation;
     private processMethodDecorators;
     private getMethodResponses;
